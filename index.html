@@ -399,7 +399,10 @@
       </div>
       <div class="field">
         <label for="f-url">Link</label>
-        <input id="f-url" type="url" placeholder="https://…" />
+<div style="display:flex; gap:8px;">
+  <input id="f-url" type="url" placeholder="https://…" style="flex:1; min-width:0;" />
+  <button type="button" class="icon-btn" id="fetchDetailsBtn" style="flex-shrink:0;">Fetch details</button>
+</div>
       </div>
       <div class="field">
         <label>Status</label>
@@ -488,6 +491,7 @@
     appId: "1:766387486402:web:32c57f626b61f7fe66c55b"
   };
   const SYNC_CONFIGURED = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
+  const MICROLINK_ENDPOINT = "https://api.microlink.io/";
 
   let db = null, syncDocRef = null, unsubscribeSnapshot = null;
   let firestoreLib = null;
@@ -884,6 +888,30 @@
     toast('Disconnected — still saving locally');
   });
 
+  document.getElementById('fetchDetailsBtn').addEventListener('click', async ()=>{
+  const url = document.getElementById('f-url').value.trim();
+  if(!url){ toast('Paste a link first'); return; }
+  toast('Fetching…');
+  try{
+    const res = await fetch(MICROLINK_ENDPOINT + '?url=' + encodeURIComponent(url));
+    const payload = await res.json();
+    if(payload.status !== 'success'){
+      toast('Could not find much on that page');
+      return;
+    }
+    const data = payload.data || {};
+    let filled = false;
+    const titleEl = document.getElementById('f-title');
+    const authorEl = document.getElementById('f-author');
+    const sourceEl = document.getElementById('f-source');
+    if(data.title && !titleEl.value.trim()){ titleEl.value = data.title; filled = true; }
+    if(data.author && !authorEl.value.trim()){ authorEl.value = data.author; filled = true; }
+    if(data.publisher && !sourceEl.value.trim()){ sourceEl.value = data.publisher; filled = true; }
+    toast(filled ? 'Filled in what we found' : 'Could not find much on that page');
+  }catch(e){
+    toast('Could not reach that page');
+  }
+});
   setStatus('want');
   load();
   if(SYNC_CONFIGURED && getSyncKey()){

@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Story Shelf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #060504;
+    --bg-2: #100d0c;
+    --leather: #362a28;
+    --leather-hover: #453634;
+    --wood: #5a4638;
+    --page: #cdbca2;
+    --text-muted: #a58e73;
+    --text-faint: #6b5a49;
+    --gold: #bb945f;
+    --gold-deep: #8c6a4a;
+    --border: rgba(205,188,162,0.13);
+    --border-strong: rgba(205,188,162,0.22);
+    --want: #8a4a44;
+    --want-soft: rgba(138,74,68,0.20);
+    --reading: #bb945f;
+    --reading-soft: rgba(187,148,95,0.18);
+    --read: #6f7c50;
+    --read-soft: rgba(111,124,80,0.18);
+    --shadow: 0 14px 34px rgba(0,0,0,0.5);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--page);
+    font-family: 'EB Garamond', serif;
+    min-height:100vh;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+  }
+  /* subtle leather-grain texture over the whole page */
+  body::before{
+    content:'';
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    opacity: 0.05; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  body::after{
+    content:'';
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    background: radial-gradient(ellipse 900px 600px at 50% -12%, rgba(187,148,95,0.06), transparent 62%),
+                radial-gradient(ellipse 800px 500px at 100% 110%, rgba(0,0,0,0.5), transparent 60%);
+  }
+
+  .wrap{ max-width: 760px; margin: 0 auto; padding: 52px 24px 90px; position: relative; z-index: 2; }
+
+  header{ margin-bottom: 38px; border-bottom: 1px solid var(--border); padding-bottom: 26px; }
+  .eyebrow{
+    font-family: 'IM Fell English SC', serif;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    color: var(--gold);
+    margin: 0 0 12px;
+  }
+  h1{
+    font-family: 'IM Fell English', serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: clamp(30px, 5.6vw, 42px);
+    margin: 0 0 10px;
+    letter-spacing: 0.005em;
+    color: var(--page);
+    text-shadow: 0 1px 0 rgba(0,0,0,0.4);
+  }
+  .tagline{
+    color: var(--text-muted);
+    font-size: 16.5px;
+    max-width: 50ch;
+    line-height: 1.55;
+    margin: 0;
+    font-style: italic;
+  }
+
+  .controls{
+    display:flex; gap:10px; align-items:center; margin: 26px 0 20px;
+    flex-wrap: wrap;
+  }
+  .search{
+    flex: 1 1 200px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 11px 14px;
+    color: var(--page);
+    font-family: 'EB Garamond', serif;
+    font-size: 16px;
+    font-style: italic;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .search::placeholder{ color: var(--text-faint); font-style: italic; }
+  .search:focus{ border-color: var(--gold-deep); }
+
+  .icon-btn{
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 4px;
+    padding: 10px 13px;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .icon-btn:hover{ color: var(--page); border-color: var(--border-strong); background: rgba(205,188,162,0.03); }
+
+  .add-btn{
+    background: linear-gradient(180deg, #c9a06c, #a97e4d);
+    color: #211408;
+    border: none;
+    border-radius: 4px;
+    padding: 11px 20px;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 14px;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: filter .12s, transform .12s;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  }
+  .add-btn:hover{ filter: brightness(1.08); transform: translateY(-1px); }
+  .add-btn:active{ transform: translateY(0); }
+
+  .tabs{
+    display:flex; gap: 2px; margin-bottom: 26px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab{
+    font-family: 'IM Fell English SC', serif;
+    font-size: 14px;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    padding: 10px 14px 12px;
+    cursor: pointer;
+    position: relative;
+    transition: color .15s;
+  }
+  .tab:hover{ color: var(--page); }
+  .tab.active{ color: var(--gold); }
+  .tab.active::after{
+    content:''; position:absolute; left:10px; right:10px; bottom:-1px; height:2px;
+    background: var(--gold); border-radius: 2px;
+  }
+  .tab .count{ color: var(--text-faint); margin-left: 4px; font-family: 'EB Garamond', serif; font-style: italic; }
+  .tab.active .count{ color: var(--gold-deep); }
+
+  .empty{
+    text-align:center;
+    padding: 80px 20px;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: linear-gradient(180deg, rgba(205,188,162,0.02), transparent);
+  }
+  .empty .glyph{ font-family:'IM Fell English', serif; font-style: italic; font-size: 30px; margin-bottom: 12px; color: var(--gold-deep); }
+  .empty p{ margin: 0 auto; max-width: 36ch; font-size: 17px; line-height: 1.6; font-style: italic; }
+  .empty button{
+    margin-top: 18px;
+    background: none;
+    border: 1px solid var(--border-strong);
+    color: var(--page);
+    padding: 9px 18px;
+    border-radius: 4px;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .empty button:hover{ background: rgba(205,188,162,0.05); }
+
+  .list{ display:flex; flex-direction:column; gap: 14px; }
+
+  .card{
+    position: relative;
+    background: linear-gradient(180deg, var(--leather), #2c2220);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 18px 22px 18px 30px;
+    cursor: pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 6px 16px rgba(0,0,0,0.3);
+    transition: background .15s, border-color .15s;
+  }
+  .card:hover{ border-color: var(--border-strong); }
+
+  /* signature: a ribbon bookmark stitched into the left edge, colored by status */
+  .ribbon{
+    position:absolute; top: -3px; left: 16px;
+    width: 12px; height: 40px;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+  }
+  .card[data-status="want"] .ribbon{ background: var(--want); }
+  .card[data-status="reading"] .ribbon{ background: var(--reading); }
+  .card[data-status="read"] .ribbon{ background: var(--read); }
+
+  .card-top{ display:flex; justify-content: space-between; align-items:flex-start; gap: 16px; }
+  .card-title{
+    font-family:'IM Fell English', serif;
+    font-weight: 400;
+    font-size: 22px;
+    margin: 0 0 5px;
+    line-height: 1.3;
+    color: var(--page);
+  }
+  .card-meta{
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 14.5px;
+    color: var(--text-muted);
+    display:flex; flex-wrap:wrap; gap: 3px 10px;
+  }
+  .card-meta a{ color: var(--gold-deep); text-decoration: none; border-bottom: 1px dotted var(--gold-deep); }
+  .card-meta a:hover{ color: var(--gold); }
+
+  .status-pill{
+    font-family: 'IM Fell English SC', serif;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border: 1px solid transparent;
+  }
+  .status-pill.want{ background: var(--want-soft); color: #d99a92; border-color: rgba(138,74,68,0.4); }
+  .status-pill.reading{ background: var(--reading-soft); color: var(--gold); border-color: rgba(187,148,95,0.4); }
+  .status-pill.read{ background: var(--read-soft); color: #b3c28c; border-color: rgba(111,124,80,0.4); }
+
+  .card-tags{ display:flex; flex-wrap:wrap; gap:6px; margin-top: 12px; }
+  .tag{
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 13.5px;
+    color: var(--text-muted);
+    background: rgba(205,188,162,0.04);
+    border: 1px solid var(--border);
+    padding: 2px 10px;
+    border-radius: 999px;
+  }
+
+  .card-notes{
+    margin-top: 11px;
+    font-size: 15.5px;
+    color: var(--text-muted);
+    line-height: 1.55;
+    max-width: 64ch;
+  }
+
+  .rating{ color: var(--gold); font-size: 14px; letter-spacing: 2px; margin-top: 11px; }
+
+  /* Modal */
+  .overlay{
+    position: fixed; inset: 0; background: rgba(0,0,0,0.72);
+    backdrop-filter: blur(3px);
+    display:flex; align-items:flex-start; justify-content:center;
+    padding: 40px 20px; overflow-y: auto;
+    z-index: 50;
+  }
+  .modal{
+    background: linear-gradient(180deg, #171210, var(--bg-2));
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    width: 100%; max-width: 540px;
+    padding: 30px 30px 26px;
+    box-shadow: var(--shadow);
+  }
+  .modal h2{
+    font-family:'IM Fell English', serif; font-weight:400; font-style:italic;
+    font-size: 27px; margin: 0 0 20px; color: var(--page);
+  }
+  .field{ margin-bottom: 15px; }
+  .field label{
+    display:block; font-family:'IM Fell English SC', serif; font-size: 12.5px;
+    letter-spacing: 0.05em; color: var(--text-muted);
+    margin-bottom: 7px;
+  }
+  .field input, .field textarea, .field select{
+    width:100%; background: rgba(0,0,0,0.25); border: 1px solid var(--border);
+    border-radius: 4px; padding: 10px 12px; color: var(--page);
+    font-family: 'EB Garamond', serif; font-size: 16.5px; outline: none;
+    resize: vertical;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus{ border-color: var(--gold-deep); }
+  .row2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .status-select{ display:flex; gap: 8px; }
+  .status-opt{
+    flex:1; text-align:center; padding: 10px 6px; border-radius: 4px;
+    border: 1px solid var(--border); cursor:pointer; font-size: 13px;
+    font-family: 'IM Fell English SC', serif; color: var(--text-muted);
+    transition: all .12s;
+  }
+  .status-opt.sel-want.selected{ background: var(--want-soft); border-color: var(--want); color: #d99a92; }
+  .status-opt.sel-reading.selected{ background: var(--reading-soft); border-color: var(--reading); color: var(--gold); }
+  .status-opt.sel-read.selected{ background: var(--read-soft); border-color: var(--read); color: #b3c28c; }
+
+  .star-row{ display:flex; gap: 7px; font-size: 24px; cursor:pointer; user-select:none; }
+  .star{ color: var(--text-faint); transition: color .1s; }
+  .star.filled{ color: var(--gold); }
+
+  .modal-actions{ display:flex; justify-content: space-between; align-items:center; margin-top: 24px; }
+  .btn{
+    font-family:'IM Fell English SC', serif; font-size: 14px;
+    padding: 10px 18px; border-radius: 4px; cursor:pointer; border: none;
+    letter-spacing: 0.02em;
+  }
+  .btn-primary{ background: linear-gradient(180deg, #c9a06c, #a97e4d); color:#211408; }
+  .btn-primary:hover{ filter: brightness(1.08); }
+  .btn-ghost{ background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+  .btn-ghost:hover{ color: var(--page); background: rgba(205,188,162,0.04); }
+  .btn-danger{ background: transparent; color: #c98b83; border: 1px solid rgba(201,139,131,0.3); }
+  .btn-danger:hover{ background: rgba(201,139,131,0.08); }
+  .actions-left{ display:flex; gap:8px; }
+
+  .toast{
+    position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
+    background: var(--bg-2); border: 1px solid var(--border-strong);
+    padding: 11px 20px; border-radius: 999px; font-size: 15px; font-style: italic;
+    color: var(--page); box-shadow: var(--shadow); z-index: 60;
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+    font-family: 'EB Garamond', serif;
+  }
+  .toast.show{ opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+  .footer-note{
+    margin-top: 44px; text-align:center; color: var(--text-faint);
+    font-size: 13px; font-family:'EB Garamond', serif; font-style: italic;
+  }
+
+  #importFile{ display:none; }
+
+  @media (max-width: 480px){
+    .row2{ grid-template-columns: 1fr; }
+    .card-top{ flex-direction: column; gap: 8px; }
+    .card{ padding-left: 26px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">A Reading Journal</p>
+    <h1>The stories you meant to read</h1>
+    <p class="tagline">Everything you've bookmarked, favorited, or meant to come back to — kept in one place, instead of scattered across every app that let you save something for later.</p>
+  </header>
+
+  <div class="controls">
+    <input class="search" id="search" type="text" placeholder="Search by title, author, or tag…" />
+    <button class="icon-btn" id="syncBtn">Sync ○</button>
+    <button class="icon-btn" id="exportBtn">Export</button>
+    <button class="icon-btn" id="importBtn">Import</button>
+    <input type="file" id="importFile" accept="application/json" />
+    <button class="add-btn" id="openAdd">+ Add a story</button>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div id="listArea"></div>
+
+  <p class="footer-note">kept privately in this browser · export a copy to carry it elsewhere</p>
+</div>
+
+<div class="overlay" id="overlay" style="display:none;">
+  <div class="modal">
+    <h2 id="modalTitle">Add a story</h2>
+    <form id="storyForm">
+      <div class="field">
+        <label for="f-title">Title *</label>
+        <input id="f-title" required placeholder="e.g. The Ones Who Walk Away From Omelas" />
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="f-author">Author</label>
+          <input id="f-author" placeholder="Ursula K. Le Guin" />
+        </div>
+        <div class="field">
+          <label for="f-source">Source / platform</label>
+          <input id="f-source" placeholder="Clarkesworld, a friend's blog…" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-url">Link</label>
+        <input id="f-url" type="url" placeholder="https://…" />
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <div class="status-select" id="statusSelect">
+          <div class="status-opt sel-want" data-val="want">want to read</div>
+          <div class="status-opt sel-reading" data-val="reading">reading</div>
+          <div class="status-opt sel-read" data-val="read">read</div>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="f-length">Length <span style="text-transform:none;opacity:.7;">(optional)</span></label>
+          <input id="f-length" placeholder="~20 min read" />
+        </div>
+        <div class="field" id="ratingField">
+          <label>Rating</label>
+          <div class="star-row" id="starRow">
+            <span class="star" data-val="1">★</span>
+            <span class="star" data-val="2">★</span>
+            <span class="star" data-val="3">★</span>
+            <span class="star" data-val="4">★</span>
+            <span class="star" data-val="5">★</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-tags">Tags <span style="text-transform:none;opacity:.7;">(comma separated)</span></label>
+        <input id="f-tags" placeholder="sci-fi, weird, recommended by Kaïs" />
+      </div>
+      <div class="field">
+        <label for="f-notes">Notes</label>
+        <textarea id="f-notes" rows="3" placeholder="Why you saved it, first impressions, where you left off…"></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <div class="actions-left">
+          <button type="button" class="btn btn-ghost" id="cancelBtn">Cancel</button>
+          <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none;">Delete</button>
+        </div>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Save story</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="overlay" id="syncOverlay" style="display:none;">
+  <div class="modal">
+    <h2>Sync across devices</h2>
+    <p style="font-size:15.5px; color:var(--text-muted); line-height:1.55; margin-top:-8px;">
+      Enter the same sync code on every device to share one shelf. The first device to connect uploads its
+      current stories; the rest will pull them down.
+    </p>
+    <div class="field" style="margin-top:18px;">
+      <label for="f-synckey">Sync code</label>
+      <input id="f-synckey" placeholder="paste a code, or generate one below" />
+    </div>
+    <div id="syncStatus" style="font-size:14px; font-style:italic; color:var(--text-muted); margin-bottom:6px;"></div>
+    <div class="modal-actions">
+      <div class="actions-left">
+        <button type="button" class="btn btn-ghost" id="syncCancelBtn">Close</button>
+        <button type="button" class="btn btn-danger" id="syncDisconnectBtn" style="display:none;">Disconnect</button>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn btn-ghost" id="syncGenerateBtn">Generate new code</button>
+        <button type="button" class="btn btn-primary" id="syncConnectBtn">Connect</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  // ---- Firebase sync (optional) ----------------------------------------
+  // 1. Create a free project at https://console.firebase.google.com
+  // 2. Enable Firestore Database (any region, "production mode" is fine).
+  // 3. Project settings → your apps → add a Web app → copy the config below.
+  // 4. Paste it in place of the placeholder object. That's it — no other
+  //    code in this file needs to change.
+  const FIREBASE_CONFIG = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+  const SYNC_CONFIGURED = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
+
+  let db = null, syncDocRef = null, unsubscribeSnapshot = null;
+  let firestoreLib = null;
+  let applyingRemote = false; // guards against re-writing what we just received
+
+  async function initFirebase(){
+    if(!SYNC_CONFIGURED || db) return;
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+    firestoreLib = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const app = initializeApp(FIREBASE_CONFIG);
+    db = firestoreLib.getFirestore(app);
+  }
+
+  function getSyncKey(){ return localStorage.getItem('story-shelf:sync-key') || ''; }
+  function setSyncKey(key){ localStorage.setItem('story-shelf:sync-key', key); }
+  function clearSyncKey(){ localStorage.removeItem('story-shelf:sync-key'); }
+
+  async function connectSync(key){
+    if(!SYNC_CONFIGURED){
+      toast('Sync is not set up yet — add your Firebase config to the file first');
+      return;
+    }
+    await initFirebase();
+    const { doc, getDoc, setDoc, onSnapshot } = firestoreLib;
+    syncDocRef = doc(db, 'shelves', key);
+
+    const snap = await getDoc(syncDocRef);
+    if(snap.exists()){
+      applyingRemote = true;
+      stories = snap.data().stories || [];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stories));
+      applyingRemote = false;
+    } else {
+      await setDoc(syncDocRef, { stories });
+    }
+
+    if(unsubscribeSnapshot) unsubscribeSnapshot();
+    unsubscribeSnapshot = onSnapshot(syncDocRef, (snap)=>{
+      if(!snap.exists()) return;
+      applyingRemote = true;
+      stories = snap.data().stories || [];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stories));
+      render();
+      applyingRemote = false;
+    });
+
+    setSyncKey(key);
+    render();
+    renderSyncStatus();
+  }
+
+  function disconnectSync(){
+    if(unsubscribeSnapshot) unsubscribeSnapshot();
+    unsubscribeSnapshot = null;
+    syncDocRef = null;
+    clearSyncKey();
+    renderSyncStatus();
+  }
+
+  async function pushToSync(){
+    if(!syncDocRef || applyingRemote) return;
+    try{
+      const { setDoc } = firestoreLib;
+      await setDoc(syncDocRef, { stories });
+    }catch(e){
+      toast('Could not sync — check your connection');
+    }
+  }
+  // ------------------------------------------------------------------------
+
+  const STORAGE_KEY = 'story-shelf:v1';
+  let stories = [];
+  let currentTab = 'all';
+  let editingId = null;
+  let selectedStatus = 'want';
+  let selectedRating = 0;
+
+  const listArea = document.getElementById('listArea');
+  const tabsEl = document.getElementById('tabs');
+  const overlay = document.getElementById('overlay');
+  const form = document.getElementById('storyForm');
+  const searchInput = document.getElementById('search');
+  const toastEl = document.getElementById('toast');
+  const ratingField = document.getElementById('ratingField');
+
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(()=> toastEl.classList.remove('show'), 1800);
+  }
+
+  function uid(){ return 's_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      stories = raw ? JSON.parse(raw) : [];
+    }catch(e){
+      stories = [];
+      toast('Could not read saved stories — starting fresh');
+    }
+    render();
+  }
+
+  function persist(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stories));
+    }catch(e){
+      toast('Could not save — your browser storage may be full');
+    }
+    pushToSync();
+  }
+
+  function statusLabel(s){
+    return s === 'want' ? 'want to read' : s === 'reading' ? 'reading' : 'read';
+  }
+
+  function counts(){
+    const c = { all: stories.length, want: 0, reading: 0, read: 0 };
+    stories.forEach(s => c[s.status] = (c[s.status]||0) + 1);
+    return c;
+  }
+
+  function renderTabs(){
+    const c = counts();
+    const defs = [
+      ['all','shelf'], ['want','want to read'], ['reading','reading'], ['read','read']
+    ];
+    tabsEl.innerHTML = defs.map(([key,label]) => `
+      <button class="tab ${currentTab===key?'active':''}" data-tab="${key}">
+        ${label}<span class="count">${c[key]||0}</span>
+      </button>
+    `).join('');
+    tabsEl.querySelectorAll('.tab').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ currentTab = btn.dataset.tab; render(); });
+    });
+  }
+
+  function matchesSearch(s, q){
+    if(!q) return true;
+    q = q.toLowerCase();
+    return (s.title||'').toLowerCase().includes(q) ||
+           (s.author||'').toLowerCase().includes(q) ||
+           (s.tags||[]).some(t => t.toLowerCase().includes(q));
+  }
+
+  function escapeHtml(str){
+    return (str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  function render(){
+    renderTabs();
+    const q = searchInput.value.trim();
+    let items = stories.filter(s => (currentTab==='all' || s.status===currentTab) && matchesSearch(s,q));
+    items = items.slice().sort((a,b) => (b.dateAdded||0) - (a.dateAdded||0));
+
+    if(items.length === 0){
+      listArea.innerHTML = `
+        <div class="empty">
+          <div class="glyph">✒</div>
+          <p>${stories.length === 0
+            ? "Your shelf is empty. Add the first story you keep meaning to get back to."
+            : "Nothing here yet — try another tab or search term."}</p>
+          ${stories.length === 0 ? '<button id="emptyAdd">+ Add a story</button>' : ''}
+        </div>`;
+      const eb = document.getElementById('emptyAdd');
+      if(eb) eb.addEventListener('click', openAddModal);
+      return;
+    }
+
+    listArea.innerHTML = `<div class="list">${items.map(cardHtml).join('')}</div>`;
+    listArea.querySelectorAll('.card').forEach(el=>{
+      el.addEventListener('click', (e)=>{
+        if(e.target.tagName === 'A') return;
+        openEditModal(el.dataset.id);
+      });
+    });
+  }
+
+  function cardHtml(s){
+    const stars = s.status==='read' && s.rating ? `<div class="rating">${'★'.repeat(s.rating)}${'☆'.repeat(5-s.rating)}</div>` : '';
+    const metaParts = [];
+    if(s.author) metaParts.push(escapeHtml(s.author));
+    if(s.source) metaParts.push(escapeHtml(s.source));
+    if(s.length) metaParts.push(escapeHtml(s.length));
+    if(s.url) metaParts.push(`<a href="${escapeHtml(s.url)}" target="_blank" rel="noopener">read it ↗</a>`);
+    return `
+      <div class="card" data-status="${s.status}" data-id="${s.id}">
+        <div class="ribbon"></div>
+        <div class="card-top">
+          <div>
+            <h3 class="card-title">${escapeHtml(s.title)}</h3>
+            <div class="card-meta">${metaParts.join(' · ')}</div>
+          </div>
+          <span class="status-pill ${s.status}">${statusLabel(s.status)}</span>
+        </div>
+        ${s.notes ? `<div class="card-notes">${escapeHtml(s.notes)}</div>` : ''}
+        ${(s.tags && s.tags.length) ? `<div class="card-tags">${s.tags.map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+        ${stars}
+      </div>`;
+  }
+
+  // Modal handling
+  function setStatus(val){
+    selectedStatus = val;
+    document.querySelectorAll('.status-opt').forEach(o=>{
+      o.classList.toggle('selected', o.dataset.val === val);
+    });
+    ratingField.style.display = val === 'read' ? 'block' : 'none';
+  }
+  function setRating(val){
+    selectedRating = val;
+    document.querySelectorAll('.star').forEach(st=>{
+      st.classList.toggle('filled', Number(st.dataset.val) <= val);
+    });
+  }
+
+  document.getElementById('statusSelect').addEventListener('click', (e)=>{
+    const opt = e.target.closest('.status-opt');
+    if(opt) setStatus(opt.dataset.val);
+  });
+  document.getElementById('starRow').addEventListener('click', (e)=>{
+    const st = e.target.closest('.star');
+    if(st) setRating(Number(st.dataset.val) === selectedRating ? 0 : Number(st.dataset.val));
+  });
+
+  function openAddModal(){
+    editingId = null;
+    document.getElementById('modalTitle').textContent = 'Add a story';
+    document.getElementById('deleteBtn').style.display = 'none';
+    document.getElementById('saveBtn').textContent = 'Save story';
+    form.reset();
+    setStatus('want');
+    setRating(0);
+    overlay.style.display = 'flex';
+    setTimeout(()=> document.getElementById('f-title').focus(), 30);
+  }
+
+  function openEditModal(id){
+    const s = stories.find(x=>x.id===id);
+    if(!s) return;
+    editingId = id;
+    document.getElementById('modalTitle').textContent = 'Edit story';
+    document.getElementById('deleteBtn').style.display = 'inline-block';
+    document.getElementById('saveBtn').textContent = 'Save changes';
+    document.getElementById('f-title').value = s.title || '';
+    document.getElementById('f-author').value = s.author || '';
+    document.getElementById('f-source').value = s.source || '';
+    document.getElementById('f-url').value = s.url || '';
+    document.getElementById('f-length').value = s.length || '';
+    document.getElementById('f-tags').value = (s.tags||[]).join(', ');
+    document.getElementById('f-notes').value = s.notes || '';
+    setStatus(s.status || 'want');
+    setRating(s.rating || 0);
+    overlay.style.display = 'flex';
+  }
+
+  function closeModal(){ overlay.style.display = 'none'; }
+
+  document.getElementById('openAdd').addEventListener('click', openAddModal);
+  document.getElementById('cancelBtn').addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && overlay.style.display==='flex') closeModal(); });
+
+  document.getElementById('deleteBtn').addEventListener('click', ()=>{
+    if(!editingId) return;
+    stories = stories.filter(s=>s.id !== editingId);
+    persist();
+    closeModal();
+    render();
+    toast('Story removed');
+  });
+
+  form.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const title = document.getElementById('f-title').value.trim();
+    if(!title) return;
+    const tags = document.getElementById('f-tags').value
+      .split(',').map(t=>t.trim()).filter(Boolean);
+
+    const data = {
+      title,
+      author: document.getElementById('f-author').value.trim(),
+      source: document.getElementById('f-source').value.trim(),
+      url: document.getElementById('f-url').value.trim(),
+      length: document.getElementById('f-length').value.trim(),
+      tags,
+      notes: document.getElementById('f-notes').value.trim(),
+      status: selectedStatus,
+      rating: selectedStatus === 'read' ? selectedRating : 0,
+    };
+
+    if(editingId){
+      const idx = stories.findIndex(s=>s.id===editingId);
+      if(idx > -1) stories[idx] = { ...stories[idx], ...data };
+      toast('Changes saved');
+    }else{
+      stories.push({ id: uid(), dateAdded: Date.now(), ...data });
+      toast('Added to your shelf');
+    }
+    persist();
+    closeModal();
+    render();
+  });
+
+  searchInput.addEventListener('input', render);
+
+  // Export / Import
+  document.getElementById('exportBtn').addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(stories, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const date = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `story-shelf-${date}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Shelf exported');
+  });
+
+  const importFile = document.getElementById('importFile');
+  document.getElementById('importBtn').addEventListener('click', ()=> importFile.click());
+  importFile.addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const imported = JSON.parse(reader.result);
+        if(!Array.isArray(imported)) throw new Error('bad format');
+        const existingIds = new Set(stories.map(s=>s.id));
+        let added = 0;
+        imported.forEach(s=>{
+          if(s && s.title && !existingIds.has(s.id)){
+            stories.push({ ...s, id: s.id || uid() });
+            added++;
+          }
+        });
+        persist();
+        render();
+        toast(`Imported ${added} ${added===1?'story':'stories'}`);
+      }catch(err){
+        toast('That file could not be read');
+      }
+      importFile.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  // Sync modal wiring
+  const syncOverlay = document.getElementById('syncOverlay');
+  const syncBtn = document.getElementById('syncBtn');
+  const syncStatusEl = document.getElementById('syncStatus');
+  const syncKeyInput = document.getElementById('f-synckey');
+
+  function renderSyncStatus(){
+    const key = getSyncKey();
+    if(!SYNC_CONFIGURED){
+      syncStatusEl.textContent = 'This copy of the app has no Firebase project connected yet.';
+      syncBtn.textContent = 'Sync ○';
+      document.getElementById('syncDisconnectBtn').style.display = 'none';
+    } else if(key){
+      syncStatusEl.textContent = 'Connected — this device shares its shelf with any other device using the same code.';
+      syncBtn.textContent = 'Sync ●';
+      document.getElementById('syncDisconnectBtn').style.display = 'inline-block';
+      syncKeyInput.value = key;
+    } else {
+      syncStatusEl.textContent = 'Not connected yet — this device is only saving locally.';
+      syncBtn.textContent = 'Sync ○';
+      document.getElementById('syncDisconnectBtn').style.display = 'none';
+    }
+  }
+
+  syncBtn.addEventListener('click', ()=>{ syncOverlay.style.display = 'flex'; renderSyncStatus(); });
+  document.getElementById('syncCancelBtn').addEventListener('click', ()=> syncOverlay.style.display = 'none');
+  syncOverlay.addEventListener('click', (e)=>{ if(e.target === syncOverlay) syncOverlay.style.display = 'none'; });
+
+  document.getElementById('syncGenerateBtn').addEventListener('click', ()=>{
+    syncKeyInput.value = crypto.randomUUID();
+  });
+
+  document.getElementById('syncConnectBtn').addEventListener('click', async ()=>{
+    const key = syncKeyInput.value.trim();
+    if(!key){ toast('Paste or generate a code first'); return; }
+    toast('Connecting…');
+    await connectSync(key);
+    toast('Connected');
+  });
+
+  document.getElementById('syncDisconnectBtn').addEventListener('click', ()=>{
+    disconnectSync();
+    toast('Disconnected — still saving locally');
+  });
+
+  setStatus('want');
+  load();
+  if(SYNC_CONFIGURED && getSyncKey()){
+    connectSync(getSyncKey());
+  }
+  renderSyncStatus();
+</script>
+
+</body>
+</html>
